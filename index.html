@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width">
+		<title>网铃</title>
+
+		<script src="https://cdn.staticfile.org/vue/2.2.2/vue.min.js"></script>
+		<script src="https://unpkg.com/mdui@1.0.2/dist/js/mdui.min.js"></script>
+		<link rel="stylesheet" href="https://unpkg.com/mdui@1.0.2/dist/css/mdui.min.css" />
+	</head>
+	<body>
+		<div id="list">
+			<div class="mdui-appbar">
+				<div class="mdui-toolbar mdui-color-indigo">
+					<a href="javascript:" class="mdui-typo-headline">网铃</a>
+					<a href="javascript:" class="mdui-typo-title">监测网站状态</a>
+					<div class="mdui-toolbar-spacer"></div>
+
+					<a href="https://github.com/hope-meeter/nBell">
+						<div v-if="update" class="mdui-chip"
+							style="line-height: normal !important; background-color: cornflowerblue;">
+							<span class="mdui-chip-icon">新</span>
+							<span class="mdui-chip-title">该网页可更新！</span>
+						</div>
+					</a>
+					<a href="javascript:" class="mdui-btn mdui-btn-icon" mdui-menu="{target: '#example-1'}">
+						<i class="mdui-icon material-icons">more_vert</i>
+					</a>
+					<ul class="mdui-menu" id="example-1">
+						<li class="mdui-menu-item">
+							<a href="javascript:about();" class="mdui-ripple">关于</a>
+						</li>
+					</ul>
+				</div>
+			</div>
+
+			<div class="mdui-container-fluid">
+				<ul class="mdui-list">
+					<li v-for="(item,index) in list" class="mdui-list-item mdui-list-item-active mdui-ripple">
+						<div class="mdui-list-item-content">
+							<div class="mdui-list-item-title">
+								<div :class="status(item.status)[1]" class="mdui-chip mdui-text-color-white">
+									<span class="mdui-chip-title">{{status(item.status)[0]}}</span>
+								</div>
+								{{item.name}}
+							</div>
+							<div class="mdui-list-item-text mdui-list-item-one-line">
+								<span class="mdui-text-color-theme-text">{{item.url}}</span>
+							</div>
+						</div>
+					</li>
+				</ul>
+			</div>
+		</div>
+
+
+		<script>
+			var VERSION = 1;
+			/// 这里需要填写你的 OpenApi secret ///
+			var SECRET = '';
+
+			var vm = new Vue({
+				el: "#list",
+				data: {
+					list: [],
+					update: false
+				},
+				mounted() {
+					var $ = mdui.$;
+					$.ajax({
+						method: 'GET',
+						url: 'https://con.kd208.top/ver.php',
+						success: function(data) {
+							vm.update = data > VERSION;
+						}
+					});
+					$.ajax({
+						method: 'POST',
+						url: 'https://con.kd208.top/api/v1/openApi/list',
+						contentType: 'application/json',
+						data: JSON.stringify({
+							secret: SECRET
+						}),
+						success: function(data) {
+							vm.list = JSON.parse(data)['data'];
+						},
+						error: function() {
+							mdui.alert('加载出错，请稍后重试');
+						}
+					});
+				}
+			});
+
+			function about() {
+				mdui.alert('微信小程序[网铃]提供数据支持<br>Github 地址:https://github.com/hope-meeter/nBell');
+			}
+
+			function status(statusCode) {
+				if (statusCode == 0) {
+					return ['超时 - ' + statusCode, 'mdui-color-red'];
+				} else if (statusCode > 0 && statusCode < 200) {
+					return ['异常 - ' + statusCode, 'mdui-color-blue'];
+				} else if (statusCode >= 200 && statusCode < 400) {
+					return ['在线 - ' + statusCode, 'mdui-color-green'];
+				} else if (statusCode >= 400 && statusCode < 600) {
+					return ['异常 - ' + statusCode, 'mdui-color-blue'];
+				} else if (statusCode == 10000) {
+					return ['规则未匹配', 'mdui-color-red'];
+				} else if (statusCode == 10001) {
+					return ['规则匹配', 'mdui-color-green'];
+				} else if (statusCode == null) {
+					return ['未更新', 'mdui-color-gray'];
+				} else {
+					return ['未知 - ' + statusCode, 'mdui-color-red'];
+				}
+			}
+		</script>
+	</body>
+</html>
