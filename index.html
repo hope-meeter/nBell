@@ -37,7 +37,7 @@
 
 			<div class="mdui-container-fluid">
 				<ul class="mdui-list">
-					<li v-for="(item,index) in list" class="mdui-list-item mdui-list-item-active mdui-ripple">
+					<li v-for="(item,index) in list" class="mdui-list-item mdui-ripple">
 						<div class="mdui-list-item-content">
 							<div class="mdui-list-item-title">
 								<div :class="status(item.status)[1]" class="mdui-chip mdui-text-color-white">
@@ -67,6 +67,9 @@
 					update: false
 				},
 				mounted() {
+					if(SECRET === '')
+						mdui.alert('SECRET 为空，请填写再试！');
+					
 					var $ = mdui.$;
 					$.ajax({
 						method: 'GET',
