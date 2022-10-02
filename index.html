@@ -87,6 +87,9 @@
 						}),
 						success: function(data) {
 							vm.list = JSON.parse(data)['data'];
+							if(vm.list.length === 0){
+								mdui.alert('列表空，请检查secret正确性及其权限设置');
+							}
 						},
 						error: function() {
 							mdui.alert('加载出错，请稍后重试');
