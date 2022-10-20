@@ -52,7 +52,7 @@
 							</div>
 							<div class="mdui-list-item-text">
 								<div style="display: flex; flex-direction: row;">
-									<div v-for="(item,index) in urlItem.timeList" :style="'width: ' + (100 / urlItem.timeList.length - 2) + '%; margin: 0 1%;'">
+									<div v-for="(item,index) in urlItem.timeList" :mdui-tooltip="'{content: \''+ item.date + '\', position: \'top\'}'" :style="'width: ' + (100 / urlItem.timeList.length - 2) + '%; margin: 0 1%;'">
 										<div class="mdui-progress">
 											<div class="mdui-progress-determinate" :style="'width: ' + item.percent + '%'"></div>
 										</div>
@@ -69,7 +69,7 @@
 
 		<script>
 			var VERSION = 1
-			/// 这里需要填写你的 查询日期范围（0-30） ///
+			/// 这里需要填写你的 查询日期范围 ///
 			var DAYS = 7;
 			/// 这里需要填写你的 OpenApi secret ///
 			var SECRET = '';
