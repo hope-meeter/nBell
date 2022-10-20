@@ -1,4 +1,4 @@
-<!-- 请不要删除“关于”信息，否则该secret可能会被停用，谢谢支持 -->
+<!-- 请不要删除“关于”信息，否则该secret可能会被停用 -->
 <!DOCTYPE html>
 <html>
 	<head>
@@ -6,7 +6,7 @@
 		<meta name="viewport" content="width=device-width">
 		<title>网铃</title>
 
-		<script src="https://cdn.staticfile.org/vue/2.2.2/vue.min.js"></script>
+		<script src="https://cdn.staticfile.org/vue/2.7.10/vue.min.js"></script>
 		<script src="https://unpkg.com/mdui@1.0.2/dist/js/mdui.min.js"></script>
 		<link rel="stylesheet" href="https://unpkg.com/mdui@1.0.2/dist/css/mdui.min.css" />
 	</head>
@@ -17,6 +17,7 @@
 					<a href="javascript:" class="mdui-typo-headline">网铃</a>
 					<a href="javascript:" class="mdui-typo-title">监测网站状态</a>
 					<div class="mdui-toolbar-spacer"></div>
+
 
 					<a href="https://github.com/hope-meeter/nBell">
 						<div v-if="update" class="mdui-chip"
@@ -38,16 +39,26 @@
 
 			<div class="mdui-container-fluid">
 				<ul class="mdui-list">
-					<li v-for="(item,index) in list" class="mdui-list-item mdui-ripple">
+					<li v-for="(urlItem,urlIndex) in list" class="mdui-list-item mdui-ripple">
 						<div class="mdui-list-item-content">
-							<div class="mdui-list-item-title">
-								<div :class="status(item.status)[1]" class="mdui-chip mdui-text-color-white">
-									<span class="mdui-chip-title">{{status(item.status)[0]}}</span>
+							<div class="mdui-list-item-title" style="margin: 0 1%;">
+								{{urlItem.name}}
+								<div :class="status(urlItem.status)[1]" class="mdui-chip mdui-float-right mdui-text-color-white">
+									<span class="mdui-chip-title">{{status(urlItem.status)[0]}}</span>
 								</div>
-								{{item.name}}
 							</div>
-							<div class="mdui-list-item-text mdui-list-item-one-line">
-								<span class="mdui-text-color-theme-text">{{item.url}}</span>
+							<div class="mdui-list-item-text" style="margin: 0 1%;">
+								<span class="mdui-text-color-theme-text">{{urlItem.url}}</span>
+							</div>
+							<div class="mdui-list-item-text">
+								<div style="display: flex; flex-direction: row;">
+									<div v-for="(item,index) in urlItem.timeList" :style="'width: ' + (100 / urlItem.timeList.length - 2) + '%; margin: 0 1%;'">
+										<div class="mdui-progress">
+											<div class="mdui-progress-determinate" :style="'width: ' + item.percent + '%'"></div>
+										</div>
+										<span>{{item.percent + '%'}}</span>
+									</div>
+								</div>
 							</div>
 						</div>
 					</li>
@@ -57,20 +68,23 @@
 
 
 		<script>
-			var VERSION = 1;
+			var VERSION = 1
+			/// 这里需要填写你的 查询日期范围（0-30） ///
+			var DAYS = 7;
 			/// 这里需要填写你的 OpenApi secret ///
 			var SECRET = '';
 
 			var vm = new Vue({
 				el: "#list",
 				data: {
+				    days: DAYS,
 					list: [],
 					update: false
 				},
-				mounted() {
-					if(SECRET === '')
+				created() {
+					if (!SECRET)
 						mdui.alert('SECRET 为空，请填写再试！');
-					
+
 					var $ = mdui.$;
 					$.ajax({
 						method: 'GET',
@@ -87,9 +101,61 @@
 							secret: SECRET
 						}),
 						success: function(data) {
-							vm.list = JSON.parse(data)['data'];
-							if(vm.list.length === 0){
+							let urlList = JSON.parse(data)['data'];
+							if (urlList.length === 0) {
 								mdui.alert('列表空，请检查secret正确性及其权限设置');
+							} else {
+								vm.list = urlList;
+								urlList.forEach(urlItem => {
+									$.ajax({
+										method: 'POST',
+										url: 'https://con.kd208.top/api/v1/openApi/query',
+										contentType: 'application/json',
+										data: JSON.stringify({
+											secret: SECRET,
+											urlId: urlItem.id,
+											days: DAYS
+										}),
+										success: function(data) {
+											urlItem.timeList = [];
+											let list = JSON.parse(data)['data'];
+											list.forEach(queryItem => {
+												let time = queryItem.time;
+												let count = queryItem.count;
+												let status = queryItem.status;
+
+												let i = urlItem.timeList[
+														time
+													] ?
+													urlItem.timeList[time] : {
+														"date": time
+													};
+												i[status] = count;
+												i['total'] = i['total'] ? i[
+														'total'] +
+													count : count;
+												if ((status >= 200 && status <
+														300) ||
+													status == 10001) {
+													i['online'] = i['online'] ?
+														i['online'] +
+														count : count;
+												}
+												i['percent'] = i['online'] ? ((i[
+															'online'] /
+														i['total'] * 100)
+													.toFixed(2)) : 0;
+												urlItem.timeList[time] = i;
+											})
+											urlItem['timeList'] = Object.values(urlItem[
+												'timeList']).reverse();
+											vm.list = Object.assign({}, vm.list, urlList)
+										},
+										error: function() {
+											mdui.alert('加载出错，请稍后重试');
+										}
+									});
+								})
 							}
 						},
 						error: function() {
@@ -100,6 +166,7 @@
 			});
 
 			function about() {
+				//请不要删除此信息
 				mdui.alert('微信小程序[网铃]提供数据支持<br>Github 地址:https://github.com/hope-meeter/nBell');
 			}
 
